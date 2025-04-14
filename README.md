@@ -97,18 +97,53 @@ const login = async () => {
 
 ## OTP Table
 
-The OTP Auth Adapter automatically sets up an `OTP` table in your Parse Server database with the following fields:
+The OTP Auth Adapter requires an `OTP` table in your Parse Server database to store OTP data securely. This table includes the following fields:
 
 - **email**: The email address associated with the OTP.
 - **otp**: The generated one-time password.
 - **expiresAt**: The expiration timestamp for the OTP.
 - **attempts**: The number of attempts made to verify this OTP.
 
-Class-Level Permissions (CLP) are configured to restrict direct access to this table, ensuring that OTP management is securely handled through server-side logic.
+### Manual Table Setup
+
+You **must** manually set up the required `OTP` table after initializing your Parse Server instance. The adapter exports a function `setupOtpTable` for this purpose. This function requires the Parse Server configuration object for the specific application.
+
+You typically call `setupOtpTable` after your `ParseServer` instance has been created or started. You need to provide the configuration object obtained via `Config.get()`.
+
+Here's an example within an async function that sets up an Express app and Parse Server:
+
+```typescript
+import express, { type Express, json } from "express";
+import ParseServer from "parse-server";
+import Config from "parse-server/lib/Config";
+import { setupOtpTable } from "parse-server-otp-auth-adapter";
+export const createServer = async (): Promise<Express> => {
+  const app = express();
+  const server = new ParseServer(parseConfig);
+
+  await server.start();
+
+  try {
+    const config = Config.get(parseConfig.appId, parseConfig.mountPath);
+    await setupOtpTable(config);
+    console.log("OTP table setup successfully.");
+  } catch (error) {
+    console.error("Failed to setup OTP table:", error);
+  }
+
+  app.use(parseConfig.mountPath, server.app);
+
+  return app;
+};
+```
+
+This function creates the `OTP` class with the necessary fields and sets appropriate Class-Level Permissions (CLP) to restrict direct client access, ensuring OTP management is handled securely by the server.
+
+For advanced users or for manual schema management, the required schema definition is also exported as `OTP_TABLE_SCHEMA`.
 
 ## Cleanup Job for Expired OTPs
 
-To maintain the OTP table and remove expired entries, you can set up a background job in Parse Server.
+To maintain the OTP table clean and remove expired entries, you can set up a background job in Parse Server.
 
 Here's an example of how to create this job:
 

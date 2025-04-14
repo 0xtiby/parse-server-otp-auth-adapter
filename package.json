@@ -43,6 +43,6 @@
     "typescript": "^5.4.5"
   },
   "dependencies": {
-    "parse-server": "^7.0.0"
+    "parse-server": "^8.0.0"
   }
 }

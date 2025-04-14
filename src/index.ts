@@ -2,7 +2,6 @@
 /* global Parse */
 
 import crypto from "node:crypto";
-import Config from "parse-server/lib/Config"; //ts-ignore
 
 export interface AuthData {
   email: string;
@@ -23,19 +22,32 @@ export interface OtpAdapterOptions {
 }
 
 const OTP_TABLE_NAME = "OTP";
-
+export const NONCE_TABLE_SCHEMA = {
+  className: OTP_TABLE_NAME,
+  fields: {
+    objectId: { type: "String" },
+    createdAt: { type: "Date" },
+    updatedAt: { type: "Date" },
+    ACL: { type: "ACL" },
+    email: { type: "String" },
+    otp: { type: "String" },
+    expiresAt: { type: "Date" },
+    attempts: { type: "Number" },
+  },
+  classLevelPermissions: {
+    find: {},
+    count: {},
+    get: {},
+    create: {},
+    update: {},
+    delete: {},
+    addField: {},
+    protectedFields: {},
+  },
+  indexes: { _id_: { _id: 1 } },
+};
 export class OtpAdapter {
-  constructor(applicationId: string, mountPath: string) {
-    setTimeout(() => {
-      setupOtpTable(applicationId, mountPath)
-        .then(() => {
-          console.log("OTP-AUTH-ADAPTER", "OTP table setup complete");
-        })
-        .catch((err) => {
-          console.log("OTP-AUTH-ADAPTER", err);
-        });
-    }, 3000);
-  }
+  constructor() {}
 
   async validateAuthData(authData: AuthData, { options }: OtpAdapterOptions) {
     const { email, otp } = authData;
@@ -160,8 +172,7 @@ function getExpirationTime(otpValidityInMs: number) {
   return expirationTime;
 }
 
-async function setupOtpTable(applicationId: string, mountPath: string) {
-  const config = Config.get(applicationId, mountPath);
+export async function setupOtpTable(config: any) {
   const schema = await config.database.loadSchema();
   console.log("OTP-AUTH-ADAPTER", "Creating OTP class ...");
   try {
@@ -196,7 +207,7 @@ async function setupOtpTable(applicationId: string, mountPath: string) {
 
 export function initializeOtpAdapter(options: OtpOptions) {
   return {
-    module: new OtpAdapter(options.applicationId, options.mountPath),
+    module: new OtpAdapter(),
     options,
   };
 }
