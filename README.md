@@ -87,6 +87,7 @@ const login = async () => {
   const authData = {
     email,
     otp,
+    id: email,
   };
 
   const user = new Parse.User();

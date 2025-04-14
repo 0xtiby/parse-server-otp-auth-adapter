@@ -22,7 +22,7 @@ export interface OtpAdapterOptions {
 }
 
 const OTP_TABLE_NAME = "OTP";
-export const NONCE_TABLE_SCHEMA = {
+export const OTP_TABLE_SCHEMA = {
   className: OTP_TABLE_NAME,
   fields: {
     objectId: { type: "String" },
