@@ -49,42 +49,50 @@ export const OTP_TABLE_SCHEMA = {
 export class OtpAdapter {
   constructor() {}
 
-  async validateAuthData(authData: AuthData, { options }: OtpAdapterOptions) {
+  async validateAuthData(
+    authData: AuthData,
+    { options }: OtpAdapterOptions,
+    request: Parse.Cloud.TriggerRequest
+  ) {
     const { email, otp } = authData;
+    const isMaster = !!request.master;
 
-    const query = new Parse.Query(OTP_TABLE_NAME);
-    query.equalTo("email", email);
-    query.descending("createdAt");
+    // We do this to let update on cloud code with master key
+    if (!isMaster) {
+      const query = new Parse.Query(OTP_TABLE_NAME);
+      query.equalTo("email", email);
+      query.descending("createdAt");
 
-    const otpObject = await query.first({ useMasterKey: true });
+      const otpObject = await query.first({ useMasterKey: true });
 
-    if (!otpObject) {
-      throw new Parse.Error(Parse.Error.OBJECT_NOT_FOUND, "OTP not found");
-    }
-
-    if (new Date() > otpObject.get("expiresAt")) {
-      await otpObject.destroy({ useMasterKey: true });
-      throw new Parse.Error(Parse.Error.INVALID_SESSION_TOKEN, "OTP expired");
-    }
-
-    if (otpObject.get("otp") !== otp) {
-      const attempts = (otpObject.get("attempts") || 0) + 1;
-      otpObject.set("attempts", attempts);
-
-      if (attempts >= options.maxAttempts) {
-        await otpObject.destroy({ useMasterKey: true });
-        throw new Parse.Error(
-          Parse.Error.OBJECT_NOT_FOUND,
-          "Max attempts reached. OTP invalidated."
-        );
-      } else {
-        await otpObject.save(null, { useMasterKey: true });
-        throw new Parse.Error(Parse.Error.OBJECT_NOT_FOUND, "Invalid OTP");
+      if (!otpObject) {
+        throw new Parse.Error(Parse.Error.OBJECT_NOT_FOUND, "OTP not found");
       }
-    }
 
-    // OTP is valid, remove it from storage
-    await otpObject.destroy({ useMasterKey: true });
+      if (new Date() > otpObject.get("expiresAt")) {
+        await otpObject.destroy({ useMasterKey: true });
+        throw new Parse.Error(Parse.Error.INVALID_SESSION_TOKEN, "OTP expired");
+      }
+
+      if (otpObject.get("otp") !== otp) {
+        const attempts = (otpObject.get("attempts") || 0) + 1;
+        otpObject.set("attempts", attempts);
+
+        if (attempts >= options.maxAttempts) {
+          await otpObject.destroy({ useMasterKey: true });
+          throw new Parse.Error(
+            Parse.Error.OBJECT_NOT_FOUND,
+            "Max attempts reached. OTP invalidated."
+          );
+        } else {
+          await otpObject.save(null, { useMasterKey: true });
+          throw new Parse.Error(Parse.Error.OBJECT_NOT_FOUND, "Invalid OTP");
+        }
+      }
+
+      // OTP is valid, remove it from storage
+      await otpObject.destroy({ useMasterKey: true });
+    }
 
     // Return true to indicate successful authentication
     return true;
@@ -210,4 +218,18 @@ export function initializeOtpAdapter(options: OtpOptions) {
     module: new OtpAdapter(),
     options,
   };
+}
+
+export function updateAuthDataAfterSave(
+  request: Parse.Cloud.AfterSaveRequest<Parse.User<Parse.Attributes>>
+) {
+  const user = request.object;
+  const authData = user.toJSON().authData;
+  const email = user.getEmail();
+
+  if (email && authData.otp.id !== email) {
+    authData.otp.id = email;
+    authData.otp.email = email;
+    user.save({ authData }, { useMasterKey: true });
+  }
 }

@@ -161,6 +161,22 @@ Parse.Cloud.job("cleanupExpiredOTPs", async () => {
 });
 ```
 
+## Updating email
+
+If the user's primary email is updated, the identifier stored within authData for this authentication method must also be kept consistent. If authData still references the old identifier (like the old email or an inconsistent ID), Parse Server may fail to link the login attempt to the existing user during subsequent logins. This can lead to errors indicating that a user with the new email already exists, preventing successful authentication.
+
+To avoid this you need to define an afterSave trigger that will do the job.
+
+```typescript
+import { updateAuthDataAfterSave } from "parse-server-otp-auth-adapter";
+
+Parse.Cloud.afterSave(Parse.User, updateAuthDataAfterSave);
+// or with you need to do more logic
+Parse.Cloud.afterSave(Parse.User, async (request) => {
+  await updateAuthDataAfterSave(request);
+});
+```
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit pull requests or open issues to discuss new features or improvements.
