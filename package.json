@@ -1,6 +1,6 @@
 {
   "name": "parse-server-otp-auth-adapter",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Parse server auth adapter to sign with one time password",
   "files": [
     "dist",
