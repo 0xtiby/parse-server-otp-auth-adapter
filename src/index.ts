@@ -10,8 +10,6 @@ export interface AuthData {
 
 export interface OtpOptions {
   otpValidityInMs: number;
-  applicationId: string;
-  mountPath: string;
   maxAttempts: number;
   sendEmail: (email: string, otp: string) => Promise<void>;
 }
@@ -149,14 +147,6 @@ export class OtpAdapter {
       otpOptions.otpValidityInMs <= 0
     ) {
       throw new Error("Invalid or missing otpValidityInMs");
-    }
-
-    if (!otpOptions.applicationId || typeof otpOptions.applicationId !== "string") {
-      throw new Error("Invalid or missing applicationId");
-    }
-
-    if (!otpOptions.mountPath || typeof otpOptions.mountPath !== "string") {
-      throw new Error("Invalid or missing mountPath");
     }
 
     if (typeof otpOptions.maxAttempts !== "number" || otpOptions.maxAttempts <= 0) {

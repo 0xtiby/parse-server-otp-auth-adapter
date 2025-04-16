@@ -22,8 +22,6 @@ npm install parse-server-otp-auth-adapter
 To use the OTP Auth Adapter in your Parse Server, configure it in the authentication section of your Parse Server options.
 
 - **otpValidityInMs**: The validity duration of the OTP in milliseconds. Example: `300000` (which is equivalent to 5 minutes).
-- **applicationId**: The application ID for which the adapter is configured, typically the Parse Server application ID. Example: `"YOUR_APP_ID"`.
-- **mountPath**: The path where the Parse Server is mounted. Example: `"/parse"`.
 - **maxAttempts**: The maximum number of OTP entry attempts allowed before invalidation. Example: `3`.
 - **sendEmail**: A function that handles sending the OTP to the user's email. You need to implement this function to integrate with your email service.
 
