@@ -42,7 +42,7 @@ export const OTP_TABLE_SCHEMA = {
     addField: {},
     protectedFields: {},
   },
-  indexes: { _id_: { _id: 1 } },
+  indexes: { _id_: { _id: 1 }, email_idx: { email: 1 } },
 };
 export class OtpAdapter {
   constructor() {}
@@ -181,6 +181,8 @@ export async function setupOtpTable(config: any) {
       attempts: { type: "Number" },
     });
     console.log("OTP-AUTH-ADAPTER", "OTP class created, setting CLP ...");
+
+    await schema.addIndex("email_idx", { email: 1 });
 
     await schema.setPermissions(OTP_TABLE_NAME, {
       get: {},
