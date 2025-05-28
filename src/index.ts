@@ -170,38 +170,37 @@ function getExpirationTime(otpValidityInMs: number) {
   return expirationTime;
 }
 
-export async function setupOtpTable(config: any) {
-  const schema = await config.database.loadSchema();
-  console.log("OTP-AUTH-ADAPTER", "Creating OTP class ...");
+export async function setupOtpTable(): Promise<void> {
   try {
-    await schema.addClassIfNotExists(OTP_TABLE_NAME, {
-      email: { type: "String" },
-      otp: { type: "String" },
-      expiresAt: { type: "Date" },
-      attempts: { type: "Number" },
-    });
-    console.log("OTP-AUTH-ADAPTER", "OTP class created, setting CLP ...");
+    const schema = new Parse.Schema(OTP_TABLE_NAME);
 
-    await schema.addIndex("email_idx", { email: 1 });
-
-    await schema.setPermissions(OTP_TABLE_NAME, {
-      get: {},
-      find: {},
-      create: {},
-      update: {},
-      delete: {},
-      addField: {},
-    });
-    console.log("OTP-AUTH-ADAPTER", "OTP CLP set");
-  } catch (err) {
-    if (err instanceof Error) {
-      console.log("OTP-AUTH-ADAPTER", err.message);
-    } else {
+    try {
+      await schema.get();
+      console.log(`OTP-AUTH-ADAPTER: Schema for class ${OTP_TABLE_NAME} already exists.`);
+    } catch (getSchemaError: any) {
       console.log(
-        "OTP-AUTH-ADAPTER",
-        "An error occurred, but it could not be interpreted as an Error object."
+        `OTP-AUTH-ADAPTER: Schema for class ${OTP_TABLE_NAME} not found. Creating...`
+      );
+
+      schema.addString("email");
+      schema.addString("otp");
+      schema.addDate("expiresAt");
+      schema.addNumber("attempts");
+      schema.addIndex("email_idx", { email: 1 });
+      schema.setCLP({});
+
+      await schema.save();
+      console.log(
+        `OTP-AUTH-ADAPTER: Schema for class ${OTP_TABLE_NAME} created successfully.`
       );
     }
+  } catch (err: any) {
+    console.error(
+      "OTP-AUTH-ADAPTER: Error during schema setup for",
+      OTP_TABLE_NAME,
+      ":",
+      err.message || err
+    );
   }
 }
 
